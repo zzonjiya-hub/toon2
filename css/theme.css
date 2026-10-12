@@ -1,0 +1,28 @@
+body{font-family:'Noto Sans KR',sans-serif}
+.brand-font{font-family:'Jua',sans-serif}
+.spooky-font{font-family:'East Sea Dokdo',cursive}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:#f1f5f9}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:#f59e0b}
+.dark-scroll::-webkit-scrollbar-track{background:#121212}
+.dark-scroll::-webkit-scrollbar-thumb{background:#2d2d2d}
+#main-canvas{touch-action:none;user-select:none;-webkit-user-select:none}
+.mini-canvas{touch-action:manipulation}
+input[type=range]{min-height:24px}
+input[type=range]::-webkit-slider-thumb{width:22px;height:22px}
+.tab-btn{min-height:40px}
+.tool-btn{min-height:40px} /* touch floor: do not go below 40px */
+header .tool-btn{min-height:28px} /* slim top bar (~30% shorter) */
+button[data-pmode],button[data-dtool],button[data-dsize],#d-clear{min-height:32px} /* square icon buttons */
+#right-panel .tight-p{padding:0.75rem}
+#right-panel p{line-height:1.45}
+#workspace-container{touch-action:none}
+.sticker-edit-btn{min-height:44px}
+.color-dot{width:32px;height:32px;border-radius:9999px;border:2px solid #e7e5e4;cursor:pointer}
+.color-dot.active{border-color:#f59e0b;box-shadow:0 0 0 2px #fde68a}
+html,body{height:100%}
+body{overflow:hidden}
+@media (max-width:1023px){
+  #right-panel{max-height:none}
+}

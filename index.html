@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>KSMS 만화 디자이너 v2</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=East+Sea+Dokdo&family=Noto+Sans+KR:wght@300;400;700;900&family=Nanum+Pen+Script&family=Black+Han+Sans&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/theme.css">
+</head>
+<body class="bg-amber-50/50 text-stone-800 h-[100dvh] flex flex-col selection:bg-amber-200 overflow-hidden">
+
+<header class="border-b border-amber-200 bg-amber-100/90 px-3 py-1.5 shrink-0 z-50">
+  <div class="w-full flex items-center gap-1.5 overflow-x-auto">
+    <h1 class="text-lg font-black brand-font whitespace-nowrap shrink-0 mr-1"><span class="text-amber-600">KSMS</span> <span class="text-stone-800">만화 v2</span></h1>
+    <button onclick="renderA4Page('download')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold tool-btn whitespace-nowrap shrink-0 bg-red-600 hover:bg-red-700 text-white">만화저장</button>
+    <button onclick="renderA4Page('view')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold tool-btn whitespace-nowrap shrink-0 bg-blue-500 hover:bg-blue-600 text-white">만화보기</button>
+    <span class="w-px h-6 bg-amber-300/70 mx-1 hidden sm:block shrink-0"></span>
+    <button onclick="changePreset('ito')" id="preset-ito" class="px-2.5 py-1 rounded-lg text-[11px] font-bold tool-btn whitespace-nowrap shrink-0 bg-white border border-stone-200 text-stone-600">스케치</button>
+    <button onclick="changePreset('pencil-color')" id="preset-color" class="px-2.5 py-1 rounded-lg text-[11px] font-bold tool-btn whitespace-nowrap shrink-0 bg-amber-500 text-white">컬러</button>
+    <button onclick="changePreset('pencil-mono')" id="preset-mono" class="px-2.5 py-1 rounded-lg text-[11px] font-bold tool-btn whitespace-nowrap shrink-0 bg-white border border-stone-200 text-stone-600">흑백</button>
+    <span class="w-px h-6 bg-amber-300/70 mx-1 hidden sm:block shrink-0"></span>
+    <button id="layout-4cut" onclick="changeLayout('4cut')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold tool-btn whitespace-nowrap shrink-0 bg-white border border-stone-200 text-stone-600">4컷</button>
+    <button id="layout-6cut" onclick="changeLayout('6cut')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold tool-btn whitespace-nowrap shrink-0 bg-green-600 text-white">6컷</button>
+    <span class="w-px h-6 bg-amber-300/70 mx-1 hidden sm:block shrink-0"></span>
+    <button id="hist-undo" onclick="undoWork()" title="이전 작업으로 되돌리기" class="px-2 py-1 rounded-lg tool-btn shrink-0 bg-white border border-stone-200 text-stone-600"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg></button>
+    <button id="hist-redo" onclick="redoWork()" title="이후 작업으로 다시실행" class="px-2 py-1 rounded-lg tool-btn shrink-0 bg-white border border-stone-200 text-stone-600"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5v0A5.5 5.5 0 0 0 9.5 20H13"/></svg></button>
+    <span class="w-px h-6 bg-amber-300/70 mx-1 hidden sm:block shrink-0"></span>
+    <button onclick="exportProjectJSON()" title="프로젝트 파일 내보내기" class="px-2.5 py-1 rounded-lg text-[11px] font-bold tool-btn whitespace-nowrap shrink-0 bg-stone-900 text-white">내보내기</button>
+    <label title="프로젝트 파일 가져오기" class="px-2.5 py-1 rounded-lg text-[11px] font-bold tool-btn whitespace-nowrap shrink-0 bg-white border border-stone-300 cursor-pointer inline-flex items-center justify-center">가져오기<input type="file" id="project-file" class="hidden" accept="application/json"></label>
+    <button onclick="clearSavedProject()" title="자동저장 지우고 처음부터" class="px-2.5 py-1 rounded-lg text-[11px] font-bold tool-btn whitespace-nowrap shrink-0 bg-white border border-rose-300 text-rose-700">초기화</button>
+    <button onclick="toggleFullscreen()" title="전체화면" class="px-2 py-1 rounded-lg tool-btn shrink-0 bg-white border border-stone-200 text-stone-600 ml-auto"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+  </div>
+</header>
+
+<main class="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
+
+  <!-- LEFT -->
+  <div class="flex-1 min-h-0 p-3 lg:p-4 flex flex-col gap-4 bg-orange-50/20 overflow-y-auto overscroll-contain">
+    <div class="w-full max-w-2xl mx-auto flex flex-col items-center">
+
+      <div id="workspace-container" class="relative w-full aspect-[4/3] bg-white border-2 border-amber-200 rounded-xl overflow-hidden shadow-md">
+        <canvas id="main-canvas" class="w-full h-full object-contain cursor-crosshair"></canvas>
+        <div id="upload-prompt" class="absolute inset-0 flex flex-col items-center justify-center text-center p-8 bg-white/95 z-10">
+          <h3 class="text-sm font-bold text-stone-800 mb-1 brand-font" id="prompt-cut-title">현재 1컷에 이미지가 등록되지 않았습니다</h3>
+          <p class="text-xs text-stone-500 max-w-xs mb-4">사진을 올리면 선택한 프리셋 필터가 적용됩니다. 컷 비율에 맞춰 자동 크롭.</p>
+          <label class="cursor-pointer px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg shadow brand-font tool-btn">현재 컷 그림 불러오기<input type="file" id="image-loader" class="hidden" accept="image/*"></label>
+          <div class="flex gap-2 mt-2 justify-center">
+            <button onclick="setWhitePaper()" class="px-4 py-2 bg-white hover:bg-stone-50 text-stone-700 text-xs font-bold rounded-lg border border-stone-300 shadow-sm tool-btn">흰종이로 시작</button>
+          </div>
+        </div>
+        <div id="interaction-badge" class="absolute top-3 left-3 bg-white/90 border border-amber-300 px-3 py-1 rounded-full text-[10px] text-amber-700 font-bold shadow-sm z-20 pointer-events-none">그림 위에서 대사·말풍선을 드래그하세요</div>
+      </div>
+
+      <!-- Hand-draw toolbar (layer 2 ink): single icon row -->
+      <div class="w-full max-w-2xl mx-auto mt-2 bg-white border-2 border-amber-200 rounded-xl shadow-sm px-2 py-1.5 flex items-center justify-between gap-1 overflow-x-auto">
+        <button data-pmode="select" title="선택 (대사 이동)"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3l7.5 18 2.5-7.5L21.5 11z"/></svg></button>
+        <span class="w-px h-6 bg-stone-200 shrink-0"></span>
+        <button data-dtool="pen" title="펜"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
+        <button data-dtool="highlighter" title="형광펜"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4Z"/></svg></button>
+        <button data-dtool="eraser" title="지우개"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21"/><path d="M22 21H7"/><path d="m5 11 9 9"/></svg></button>
+        <span class="w-px h-6 bg-stone-200 shrink-0"></span>
+        <button data-dsize="thin" title="가는선"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" x2="20" y1="12" y2="12"/></svg></button>
+        <button data-dsize="normal" title="보통선"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round"><line x1="4" x2="20" y1="12" y2="12"/></svg></button>
+        <button data-dsize="thick" title="굵은선"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round"><line x1="4" x2="20" y1="12" y2="12"/></svg></button>
+        <span class="w-px h-6 bg-stone-200 shrink-0"></span>
+        <button data-dcolor="#ef4444" title="빨강" style="background:#ef4444"></button>
+        <button data-dcolor="#f97316" title="주황" style="background:#f97316"></button>
+        <button data-dcolor="#facc15" title="노랑" style="background:#facc15"></button>
+        <button data-dcolor="#22c55e" title="초록" style="background:#22c55e"></button>
+        <button data-dcolor="#3b82f6" title="파랑" style="background:#3b82f6"></button>
+        <button data-dcolor="#a855f7" title="보라" style="background:#a855f7"></button>
+        <button data-dcolor="#92400e" title="갈색" style="background:#92400e"></button>
+        <button data-dcolor="#ffffff" title="흰색" style="background:#ffffff"></button>
+        <button data-dcolor="#6b7280" title="회색" style="background:#6b7280"></button>
+        <button data-dcolor="#111111" title="검정" style="background:#111111"></button>
+        <span class="w-px h-6 bg-stone-200 shrink-0"></span>
+        <button id="d-clear" title="현재 컷 필기 전체 지우기" class="w-8 h-8 flex items-center justify-center rounded-lg tool-btn shrink-0 bg-white border border-rose-300 text-rose-600"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
+      </div>
+
+      <div class="flex gap-1.5 mt-2 w-full max-w-2xl items-stretch">
+        <div id="cut-tabs" class="flex flex-1 bg-white p-1 rounded-lg border border-amber-200 justify-between gap-1 shadow-sm"></div>
+        <button class="px-2 bg-white text-stone-600 text-[11px] rounded-lg border border-stone-200 font-bold shadow-sm tool-btn whitespace-nowrap" onclick="resetActiveCut()">그림 비우기</button>
+        <button class="px-2 bg-white text-stone-600 text-[11px] rounded-lg border border-stone-200 font-bold shadow-sm tool-btn whitespace-nowrap" onclick="clearActiveCutStickers()">대사 지우기</button>
+      </div>
+    </div>
+
+    <div class="w-full max-w-2xl mx-auto border-t border-amber-200/60 pt-3">
+      <h3 class="text-xs font-bold text-amber-800 mb-3 brand-font">6컷·4컷 미리보기 (A4 출력과 동일한 2열 배치)</h3>
+      <div class="grid grid-cols-2 gap-4" id="mini-grid">
+        <div id="mini-card-0" onclick="switchActiveCut(0)" class="p-2.5 rounded-xl border-2 cursor-pointer hover:scale-[1.02] shadow-sm bg-white border-amber-500"><div class="flex justify-between mb-1.5"><span class="text-[11px] font-bold brand-font text-amber-600" id="mini-label-0">1컷</span><span class="text-[9px] text-stone-400">Cut 1</span></div><canvas id="mini-canvas-0" class="w-full aspect-[4/3] bg-stone-100 rounded-lg border border-stone-200 mini-canvas"></canvas></div>
+        <div id="mini-card-1" onclick="switchActiveCut(1)" class="p-2.5 rounded-xl border-2 cursor-pointer hover:scale-[1.02] shadow-sm bg-white border-amber-200"><div class="flex justify-between mb-1.5"><span class="text-[11px] font-bold brand-font text-stone-500" id="mini-label-1">2컷</span><span class="text-[9px] text-stone-400">Cut 2</span></div><canvas id="mini-canvas-1" class="w-full aspect-[4/3] bg-stone-100 rounded-lg border border-stone-200 mini-canvas"></canvas></div>
+        <div id="mini-card-2" onclick="switchActiveCut(2)" class="p-2.5 rounded-xl border-2 cursor-pointer hover:scale-[1.02] shadow-sm bg-white border-amber-200"><div class="flex justify-between mb-1.5"><span class="text-[11px] font-bold brand-font text-stone-500" id="mini-label-2">3컷</span><span class="text-[9px] text-stone-400">Cut 3</span></div><canvas id="mini-canvas-2" class="w-full aspect-[4/3] bg-stone-100 rounded-lg border border-stone-200 mini-canvas"></canvas></div>
+        <div id="mini-card-3" onclick="switchActiveCut(3)" class="p-2.5 rounded-xl border-2 cursor-pointer hover:scale-[1.02] shadow-sm bg-white border-amber-200"><div class="flex justify-between mb-1.5"><span class="text-[11px] font-bold brand-font text-stone-500" id="mini-label-3">4컷</span><span class="text-[9px] text-stone-400">Cut 4</span></div><canvas id="mini-canvas-3" class="w-full aspect-[4/3] bg-stone-100 rounded-lg border border-stone-200 mini-canvas"></canvas></div>
+        <div id="mini-card-4" onclick="switchActiveCut(4)" class="p-2.5 rounded-xl border-2 cursor-pointer hover:scale-[1.02] shadow-sm bg-white border-amber-200"><div class="flex justify-between mb-1.5"><span class="text-[11px] font-bold brand-font text-stone-500" id="mini-label-4">5컷</span><span class="text-[9px] text-stone-400">Cut 5</span></div><canvas id="mini-canvas-4" class="w-full aspect-[4/3] bg-stone-100 rounded-lg border border-stone-200 mini-canvas"></canvas></div>
+        <div id="mini-card-5" onclick="switchActiveCut(5)" class="p-2.5 rounded-xl border-2 cursor-pointer hover:scale-[1.02] shadow-sm bg-white border-amber-200"><div class="flex justify-between mb-1.5"><span class="text-[11px] font-bold brand-font text-stone-500" id="mini-label-5">6컷</span><span class="text-[9px] text-stone-400">Cut 6</span></div><canvas id="mini-canvas-5" class="w-full aspect-[4/3] bg-stone-100 rounded-lg border border-stone-200 mini-canvas"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div id="right-panel" class="w-full lg:w-80 shrink-0 h-[42%] lg:h-full border-t lg:border-t-0 lg:border-l border-amber-200 bg-white flex flex-col overflow-y-auto overscroll-contain">
+    <div class="p-3 border-b border-amber-100 bg-amber-50/20 space-y-2">
+      <h4 class="text-xs font-bold text-stone-500 brand-font">만화 기본 정보</h4>
+      <div class="grid grid-cols-2 gap-2">
+        <div><label class="text-[10px] text-stone-600 font-semibold block mb-1">만화 제목</label><input type="text" id="input-manga-title" placeholder="6컷 만화 만들기" class="w-full bg-stone-50 border border-stone-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-amber-500" oninput="onTitleAuthorInput()"></div>
+        <div><label class="text-[10px] text-stone-600 font-semibold block mb-1">작가명</label><input type="text" id="input-manga-author" placeholder="조기석" class="w-full bg-stone-50 border border-stone-200 rounded-lg px-2.5 py-2 text-xs focus:outline-none focus:border-amber-500" oninput="onTitleAuthorInput()"></div>
+      </div>
+    </div>
+
+    <div class="flex border-b border-amber-100 text-xs font-bold text-stone-500 brand-font">
+      <button id="tab-btn-filter" class="flex-1 py-3 text-center border-b-2 border-amber-500 text-amber-600 bg-amber-50/40 tab-btn" onclick="switchTab('filter')">필터·테두리</button>
+      <button id="tab-btn-sticker" class="flex-1 py-3 text-center border-b-2 border-transparent tab-btn" onclick="switchTab('sticker')">대사·말풍선</button>
+    </div>
+
+    <div id="tab-filter" class="p-4 flex-1 flex flex-col gap-3">
+      <div><div class="flex justify-between mb-1"><h4 class="text-xs font-bold text-stone-500 brand-font">외곽선 진하기</h4><span id="val-edge-weight" class="text-xs text-amber-600 font-bold">2.0</span></div><input type="range" id="input-edge-weight" min="0.5" max="5" step="0.1" value="2.0" class="w-full accent-amber-500" oninput="updateFilterParams()"></div>
+      <div><div class="flex justify-between mb-1"><h4 class="text-xs font-bold text-stone-500 brand-font">선명도·밝기</h4><span id="val-contrast" class="text-xs text-amber-600 font-bold">1.2</span></div><input type="range" id="input-contrast" min="0.5" max="2.5" step="0.1" value="1.2" class="w-full accent-amber-500" oninput="updateFilterParams()"></div>
+      <div><div class="flex justify-between mb-1"><h4 class="text-xs font-bold text-stone-500 brand-font">스케치 감도</h4><span id="val-threshold" class="text-xs text-amber-600 font-bold">120</span></div><input type="range" id="input-threshold" min="50" max="200" step="5" value="120" class="w-full accent-amber-500" oninput="updateFilterParams()"></div>
+      <div>
+        <h4 class="text-xs font-bold text-stone-500 mb-2 brand-font">선 텍스처</h4>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="changeStyle('classic')" id="style-classic" class="py-2 px-3 bg-amber-100 border border-amber-400 rounded-xl text-xs font-semibold text-amber-900 tool-btn">촘촘한 빗금</button>
+          <button onclick="changeStyle('screentone')" id="style-screentone" class="py-2 px-3 bg-stone-100 border border-stone-200 rounded-xl text-xs font-semibold text-stone-600 tool-btn">점묘 망점</button>
+        </div>
+      </div>
+      <div class="border-t border-stone-200/60"></div>
+      <div>
+        <h4 class="text-xs font-bold text-stone-500 mb-2 brand-font">컷 테두리</h4>
+        <div class="flex justify-between mb-1"><span class="text-[11px] text-stone-500">선 두께</span><span id="val-border-width" class="text-xs text-amber-600 font-bold">4px</span></div>
+        <input type="range" id="input-border-width" min="1" max="15" step="1" value="4" class="w-full accent-amber-500 mb-2" oninput="updateBorderParams()">
+        <div class="grid grid-cols-2 gap-1.5">
+          <button onclick="changeBorderStyle('solid')" id="bstyle-solid" class="py-2 px-2 bg-amber-100 border border-amber-400 rounded-lg text-xs text-amber-900 font-semibold tool-btn">기본선</button>
+          <button onclick="changeBorderStyle('dashed')" id="bstyle-dashed" class="py-2 px-2 bg-stone-50 border border-stone-200 rounded-lg text-xs text-stone-600 tool-btn">점선</button>
+          <button onclick="changeBorderStyle('double')" id="bstyle-double" class="py-2 px-2 bg-stone-50 border border-stone-200 rounded-lg text-xs text-stone-600 tool-btn">이중선</button>
+          <button onclick="changeBorderStyle('rough')" id="bstyle-rough" class="py-2 px-2 bg-stone-50 border border-stone-200 rounded-lg text-xs text-stone-600 tool-btn">손그림풍</button>
+        </div>
+      </div>
+      <label class="flex items-center justify-between p-3 bg-amber-50/40 rounded-xl border border-amber-100">
+        <span class="text-xs font-semibold">바깥 비네팅 음영</span>
+        <input type="checkbox" id="input-vignette" checked class="w-5 h-5 accent-amber-500" onchange="updateFilterParams()">
+      </label>
+    </div>
+
+    <div id="tab-sticker" class="p-4 flex-1 flex-col gap-3 hidden flex">
+      <div id="bubble-creator-container" class="bg-amber-50/40 p-3 rounded-xl border border-amber-200 shadow-sm">
+        <h4 class="text-xs font-bold text-amber-700 brand-font mb-2" id="sticker-title-label">현재 [1컷] 대사/말풍선</h4>
+        <textarea id="custom-sticker-text" oninput="handleStickerTextInput()" placeholder="대사를 입력하세요 (말풍선은 자동 줄바꿈+자동확장)" rows="2" class="w-full bg-white border rounded-lg p-2.5 text-sm focus:outline-none focus:border-amber-500 resize-none"></textarea>
+        <div id="action-buttons-container" class="flex gap-2 mt-2">
+          <button id="btn-add-bubble" onclick="addSpeechBubbleSticker()" disabled class="flex-1 py-2.5 bg-white border border-stone-200 rounded-lg text-xs font-bold tool-btn disabled:opacity-50">말풍선 추가</button>
+          <button id="btn-add-text" onclick="addCustomTextSticker()" disabled class="flex-1 py-2.5 bg-amber-500 text-white rounded-lg text-xs font-bold tool-btn disabled:opacity-50">일반 대사 추가</button>
+        </div>
+        <button id="btn-edit-done" onclick="finishStickerEditing()" class="hidden w-full py-2.5 mt-2 bg-emerald-600 text-white text-xs font-bold rounded-lg tool-btn">수정 완료 (저장)</button>
+      </div>
+
+      <button id="btn-edit-text" onclick="editSelectedFromPanel()" class="hidden w-full py-2.5 bg-white border border-amber-300 text-amber-800 text-xs font-bold rounded-lg tool-btn">선택한 대사 편집하기 (태블릿용)</button>
+
+      <div id="selected-sticker-controls" class="hidden bg-amber-50/20 p-3 rounded-xl border border-amber-300 space-y-3 shadow-sm">
+        <div class="flex justify-between items-center border-b border-amber-200 pb-2">
+          <h4 class="text-xs font-bold text-amber-700 brand-font">선택 대사 편집</h4>
+          <div class="flex gap-1">
+            <button onclick="moveStickerZ('back')" class="text-[10px] px-2 py-1.5 bg-white border border-stone-200 rounded-lg tool-btn">뒤로</button>
+            <button onclick="moveStickerZ('front')" class="text-[10px] px-2 py-1.5 bg-white border border-stone-200 rounded-lg tool-btn">앞으로</button>
+            <button onclick="deleteActiveSticker()" class="text-[10px] px-2 py-1.5 bg-rose-50 border border-rose-300 text-rose-700 font-bold rounded-lg tool-btn">삭제</button>
+          </div>
+        </div>
+        <div id="bubble-style-control-group">
+          <span class="text-[11px] font-semibold block mb-1.5">꼬리 유형</span>
+          <div class="grid grid-cols-3 gap-1">
+            <button id="tail-sharp" onclick="updateSelectedStickerProperty('tailType','sharp')" class="tool-btn">뾰족</button>
+            <button id="tail-dots" onclick="updateSelectedStickerProperty('tailType','dots')" class="tool-btn">점형</button>
+            <button id="tail-none" onclick="updateSelectedStickerProperty('tailType','none')" class="tool-btn">없음</button>
+          </div>
+        </div>
+        <div id="bubble-color-control-group">
+          <span class="text-[11px] font-semibold block mb-1.5">말풍선 색 (검정 선택 시 흰글자 자동)</span>
+          <div class="flex gap-2 items-center">
+            <div class="color-dot" style="background:#ffffff" onclick="updateSelectedStickerProperty('fill','#ffffff')" title="흰색"></div>
+            <div class="color-dot" style="background:#fef08a" onclick="updateSelectedStickerProperty('fill','#fef08a')" title="노랑"></div>
+            <div class="color-dot" style="background:#fecaca" onclick="updateSelectedStickerProperty('fill','#fecaca')" title="분홍"></div>
+            <div class="color-dot" style="background:#000000" onclick="updateSelectedStickerProperty('fill','#000000')" title="검정"></div>
+            <button onclick="updateSelectedStickerProperty('textColor','#000000')" class="text-[10px] px-2 py-1.5 bg-white border rounded-lg tool-btn">검은글자</button>
+            <button onclick="updateSelectedStickerProperty('textColor','#ffffff')" class="text-[10px] px-2 py-1.5 bg-black text-white rounded-lg tool-btn">흰글자</button>
+          </div>
+        </div>
+        <div id="text-font-control-group">
+          <span class="text-[11px] font-semibold block mb-1.5">글씨체 (일반대사용)</span>
+          <div class="grid grid-cols-3 gap-1">
+            <button onclick="updateSelectedStickerProperty('fontFamily','Jua')" class="py-1.5 text-[10px] bg-white border border-stone-200 rounded-lg tool-btn">둥근체</button>
+            <button onclick="updateSelectedStickerProperty('fontFamily','Nanum Pen Script')" class="py-1.5 text-[10px] bg-white border border-stone-200 rounded-lg tool-btn">펜체</button>
+            <button onclick="updateSelectedStickerProperty('fontFamily','Black Han Sans')" class="py-1.5 text-[10px] bg-white border border-stone-200 rounded-lg tool-btn">굵은체</button>
+            <button onclick="updateSelectedStickerProperty('fontFamily','East Sea Dokdo')" class="py-1.5 text-[10px] bg-white border border-stone-200 rounded-lg tool-btn">붓체</button>
+          </div>
+        </div>
+        <div><div class="flex justify-between mb-1"><span class="text-[11px] font-semibold">크기</span><span id="val-selected-size" class="text-xs font-bold">100px</span></div><input type="range" id="input-selected-size" min="30" max="300" step="5" class="w-full accent-amber-500" oninput="updateSelectedStickerProperty('size',this.value)"></div>
+        <div><div class="flex justify-between mb-1"><span class="text-[11px] font-semibold">회전</span><span id="val-selected-rot" class="text-xs font-bold">0°</span></div><input type="range" id="input-selected-rot" min="-180" max="180" step="5" class="w-full accent-amber-500" oninput="updateSelectedStickerProperty('rotation',this.value)"></div>
+        <div id="bubble-tail-control-group">
+          <div class="flex justify-between mb-1"><span class="text-[11px] font-semibold">꼬리 방향</span><span id="val-selected-tail" class="text-xs font-bold">225°</span></div>
+          <input type="range" id="input-selected-tail" min="0" max="360" step="5" class="w-full accent-amber-500" oninput="updateSelectedStickerProperty('tailAngle',this.value)">
+          <div class="flex justify-between mb-1 mt-2"><span id="label-tail-length" class="text-[11px] font-semibold">꼬리 길이</span><span id="val-tail-length" class="text-xs font-bold">1.55x</span></div>
+          <input type="range" id="input-tail-length" min="1.1" max="2.2" step="0.05" value="1.55" class="w-full accent-amber-500" oninput="updateSelectedStickerProperty('tailLength',this.value)">
+        </div>
+      </div>
+      <p class="text-[11px] text-stone-500 leading-relaxed">태블릿: 대사를 터치해 선택 → [선택한 대사 편집하기]로 수정. 꼬리 종류·방향·간격·색상은 선택 후 조절.</p>
+    </div>
+
+  </div>
+</main>
+
+<script src="js/state.js"></script>
+<script src="js/filters.js"></script>
+<script src="js/stickers.js"></script>
+<script src="js/draw.js"></script>
+<script src="js/canvas.js"></script>
+<script src="js/export.js"></script>
+<script src="js/project.js"></script>
+<script src="js/history.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
