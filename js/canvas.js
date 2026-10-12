@@ -146,8 +146,28 @@ function handleImageUpload(e) {
   reader.onload = (ev) => {
     const img = new Image();
     img.onload = () => {
-      cuts[idx].image = img;
-      cuts[idx].imageSrc = ev.target.result;
+      // downscale huge photos (max 1280px, JPEG) so autosave fits in localStorage
+      let src = ev.target.result;
+      const finalImg = img;
+      if (Math.max(img.width, img.height) > 1280) {
+        const s = 1280 / Math.max(img.width, img.height);
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * s);
+        c.height = Math.round(img.height * s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        src = c.toDataURL('image/jpeg', 0.85);
+        const small = new Image();
+        small.onload = () => {
+          cuts[idx].image = small;
+          cuts[idx].imageSrc = src;
+          applyAllEffects();
+          scheduleAutosave();
+        };
+        small.src = src;
+        return;
+      }
+      cuts[idx].image = finalImg;
+      cuts[idx].imageSrc = src;
       applyAllEffects();
       scheduleAutosave();
     };

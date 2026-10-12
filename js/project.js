@@ -1,31 +1,87 @@
 /* KSMS Comic v2 - project save/load (localStorage + JSON file) */
 const LS_KEY = 'ksms-comic-v2-autosave';
+const NUDGE_KEY = 'ksms-comic-v2-backup-nudge';
+const NUDGE_SIZE = Math.round(3.5 * 1024 * 1024); // ~3.5MB: warn once, suggest export backup
 let autosaveTimer = null;
+let storageFull = false;
+let storageWarned = '';
 let applying = false;
 let applyQueued = null;
 
-function serializeProject() {
+function serializeProject(photoMode = 'full') {
   return {
     app: 'ksms-comic-v2', version: 1, savedAt: new Date().toISOString(),
     state: { ...state },
     title: document.getElementById('input-manga-title').value,
     author: document.getElementById('input-manga-author').value,
     cuts: cuts.map(c => ({
-      imageSrc: c.imageSrc,
+      imageSrc: photoMode === 'dropped' ? null
+        : photoMode === 'shrunk' ? shrinkPhoto(c, 960, 0.72)
+        : c.imageSrc,
       stickers: c.stickers.map(s => ({ ...s, _rx: undefined, _ry: undefined })),
       drawings: c.drawings || []
     }))
   };
 }
 
+/* downscale a cut photo for storage (memory images already loaded) */
+function shrinkPhoto(cut, maxDim, quality) {
+  if (!cut.imageSrc) return null;
+  const img = cut.image;
+  if (!img || !img.naturalWidth) return cut.imageSrc;
+  if (Math.max(img.naturalWidth, img.naturalHeight) <= maxDim) return cut.imageSrc;
+  try {
+    const s = maxDim / Math.max(img.naturalWidth, img.naturalHeight);
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(img.naturalWidth * s));
+    c.height = Math.max(1, Math.round(img.naturalHeight * s));
+    const x = c.getContext('2d');
+    x.fillStyle = '#ffffff';
+    x.fillRect(0, 0, c.width, c.height); // JPEG has no alpha
+    x.drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', quality);
+  } catch (e) {
+    return cut.imageSrc;
+  }
+}
+
 function scheduleAutosave() {
   clearTimeout(autosaveTimer);
   autosaveTimer = setTimeout(() => {
-    try {
-      localStorage.setItem(LS_KEY, JSON.stringify(serializeProject()));
-      const el = document.getElementById('autosave-status');
-      if (el) el.textContent = '자동저장됨 ' + new Date().toLocaleTimeString();
-    } catch (e) { /* quota exceeded: images too large */ }
+    // tiered save: full -> smaller photos -> photos dropped (work always kept)
+    const tiers = [
+      { mode: 'full', warn: '' },
+      { mode: 'shrunk', warn: '저장 공간이 부족해 사진 해상도를 낮춰 저장했습니다. 말풍선·그림·설정은 그대로입니다. 내보내기로 백업하세요.' },
+      { mode: 'dropped', warn: '저장 공간이 부족해 사진을 제외하고 저장했습니다. 말풍선·그림·설정은 그대로입니다. 새로고침 전 반드시 내보내기로 백업하세요.' }
+    ];
+    for (const t of tiers) {
+      try {
+        const payload = JSON.stringify(serializeProject(t.mode));
+        localStorage.setItem(LS_KEY, payload);
+        storageFull = t.mode !== 'full';
+        if (t.warn && storageWarned !== t.mode) {
+          storageWarned = t.mode;
+          alert(t.warn);
+        } else if (!t.warn) {
+          storageWarned = '';
+        }
+        const el = document.getElementById('autosave-status');
+        if (el) el.textContent = '자동저장됨 ' + new Date().toLocaleTimeString();
+        // one-time nudge: data getting big -> suggest export backup
+        try {
+          if (payload.length > NUDGE_SIZE && !localStorage.getItem(NUDGE_KEY)) {
+            localStorage.setItem(NUDGE_KEY, '1');
+            alert('작업 데이터가 커졌습니다. 만약을 위해 상단바 내보내기로 백업 파일을 받아 두세요.');
+          }
+        } catch (e) {}
+        return;
+      } catch (e) { /* try next smaller tier */ }
+    }
+    // even work-only data did not fit (extremely rare)
+    if (storageWarned !== 'failed') {
+      storageWarned = 'failed';
+      alert('브라우저 저장 공간이 부족해 자동저장이 안 됩니다. 지금 바로 상단바 내보내기로 백업하세요.');
+    }
   }, 800);
 }
 
