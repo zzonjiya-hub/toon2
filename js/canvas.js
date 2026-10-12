@@ -182,6 +182,8 @@ function getCanvasCoords(e) {
 }
 
 let dragMoved = false;
+let pendingTapSticker = null;
+let pendingTapTime = 0;
 
 function handleCanvasMouseDown(e) {
   if (typeof pen !== 'undefined' && pen.mode === 'draw') return;
@@ -189,7 +191,16 @@ function handleCanvasMouseDown(e) {
   const found = findStickerAt(c.x / canvas.width, c.y / canvas.height);
   if (found) {
     if (isEditingMode && selectedSticker !== found) finishStickerEditing();
+    // second tap on already-selected sticker (within 450ms, no drag) = edit (pads have no dblclick)
+    if (!isEditingMode && selectedSticker === found && pendingTapSticker === found && (Date.now() - pendingTapTime) < 450) {
+      pendingTapSticker = null;
+      enterStickerEditMode(found);
+      applyAllEffects();
+      return;
+    }
     selectedSticker = found;
+    pendingTapSticker = found;
+    pendingTapTime = Date.now();
     isDragging = true;
     dragMoved = false;
     beginHist();

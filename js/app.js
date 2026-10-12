@@ -109,9 +109,12 @@ function checkTextArea() {
 function handleStickerTextInput() { checkTextArea(); scheduleAutosave(); }
 
 function enterStickerEditMode(st) {
+  if (isEditingMode && selectedSticker === st) return; // already editing: no duplicate history
   pushHistory();
   isEditingMode = true; selectedSticker = st;
-  document.getElementById('custom-sticker-text').value = st.text;
+  const ta = document.getElementById('custom-sticker-text');
+  ta.value = st.text;
+  try { ta.focus({ preventScroll: true }); } catch (e) { ta.focus(); }
   document.getElementById('bubble-creator-container').classList.add('border-green-500');
   document.getElementById('action-buttons-container').classList.add('hidden');
   document.getElementById('btn-edit-done').classList.remove('hidden');
@@ -158,6 +161,8 @@ function updateSelectedStickerProperty(prop, value) {
 
 function syncSelectedStickerControls() {
   const panel = document.getElementById('selected-sticker-controls');
+  const editBtn = document.getElementById('btn-edit-text');
+  if (editBtn) editBtn.classList.toggle('hidden', !selectedSticker);
   if (!selectedSticker) { panel.classList.add('hidden'); return; }
   panel.classList.remove('hidden');
   const st = selectedSticker;
